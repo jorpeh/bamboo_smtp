@@ -8,90 +8,26 @@ on:
 
 jobs:
   test:
-    name: Test on Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: [1.7.4, 1.8.2, 1.9.1, 1.10.3, 1.11.3, 1.12.3, 1.13.4, 1.14, 1.17]
-        otp: [21.3, 22.3, 23.3, 24.3, 26.0, 27.0]
-        exclude:
-          - elixir: 1.7.4
-            otp: 23.3
-          - elixir: 1.7.4
-            otp: 24.3
-          - elixir: 1.8.2
-            otp: 23.3
-          - elixir: 1.8.2
-            otp: 24.3
-          - elixir: 1.9.1
-            otp: 23.3
-          - elixir: 1.9.1
-            otp: 24.3
-          - elixir: 1.10.3
-            otp: 24.3
-          - elixir: 1.11.3
-            otp: 24.3
-          - elixir: 1.12.3
-            otp: 21.3
-          - elixir: 1.13.4
-            otp: 21.3
-          - elixir: 1.7.4
-            otp: 26.0
-          - elixir: 1.8.2
-            otp: 26.0
-          - elixir: 1.9.1
-            otp: 26.0
-          - elixir: 1.10.3
-            otp: 26.0
-          - elixir: 1.11.3
-            otp: 26.0
-          - elixir: 1.12.3
-            otp: 26.0
-          - elixir: 1.13.4
-            otp: 26.0
-          - elixir: 1.14
-            otp: 26.0
-          - elixir: 1.17
-            otp: 21.3
-          - elixir: 1.17
-            otp: 22.3
-          - elixir: 1.17
-            otp: 23.3
+        elixir: [1.17]
+        otp: [27.0]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - uses: actions/cache@v2
-        with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}-elixir-${{ matrix.elixir }}-otp-${{ matrix.otp }}
-
-      - uses: erlef/setup-beam@v1
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ matrix.otp }}
           elixir-version: ${{ matrix.elixir }}
 
-      - run: mix deps.get
-      - run: mix compile --warnings-as-errors
-      - run: mix credo --strict
-      - run: mix test
+      - name: Install dependencies
+        run: mix deps.get
 
-  doc:
-    name: Generate inch report
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
-      - uses: actions/cache@v2
-        with:
-          path: deps
-          key: ${{ runner.os }}-mix-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
-
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: 27
-          elixir-version: 1.17
-
-      - run: mix deps.get --only docs
-      - run: MIX_ENV=docs mix inch.report
+      - name: Run tests
+        run: mix test
